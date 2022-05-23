@@ -34,12 +34,15 @@ rules:
       - pattern-either:
           - pattern: |
               console.trace(...)
-          - pattern: |
-              try {
-                  ...
-              } catch($ERR){
-                  console.error(<... $ERR ...>, ...)
-              }
+          - patterns:
+            - pattern-inside: |
+                try {
+                    ...
+                } catch($ERR){
+                    ...
+                }
+            - pattern: |
+                console.error(<... $ERR ...>, ...)
     message: >-
       Error messages with stack traces may expose sensitive information about
       the application.

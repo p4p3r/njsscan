@@ -2,68 +2,46 @@
 # module imports used as described in https://github.com/returntocorp/semgrep/issues/285
 rules:
   - id: hardcoded_jwt_secret
+    options:
+      symbolic_propagation: true
     patterns:
       - pattern-either:
-          - pattern: |
-              $JWT = require("jsonwebtoken")
-              ...
-              $JWT.sign($P, "...", ...)
-          - pattern: |
-              $JWT = require("jsonwebtoken")
-              ...
-              $JWT.verify($P, "...", ...)
-          - pattern: |
-              $JWT = require("jsonwebtoken")
-              ...
-              $SECRET = "...";
-              ...
-              $JWT.sign($P, $SECRET, ...)
-          - pattern: |
-              $JWT = require("jsonwebtoken")
-              ...
-              $SECRET = "...";
-              ...
-              $JWT.verify($P, $SECRET, ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $JOSE.JWT.sign($P, "...", ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $JOSE.JWT.verify($P, "...", ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $JOSE.JWT.sign($P, $JOSE.JWK.asKey("..."), ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $JOSE.JWT.verify($P, $JOSE.JWK.asKey("..."), ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $SECRET = "...";
-              ...
-              $JOSE.JWT.sign($P, $SECRET, ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $SECRET = "...";
-              ...
-              $JOSE.JWT.verify($P, $SECRET, ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $SECRET = "...";
-              ...
-              $JOSE.JWT.sign($P, $JOSE.JWK.asKey($SECRET), ...)
-          - pattern: |
-              $JOSE = require("jose")
-              ...
-              $SECRET = "...";
-              ...
-              $JOSE.JWT.verify($P, $JOSE.JWK.asKey($SECRET), ...)
+          - patterns:
+              - pattern-inside: |
+                  $JWT = require("jsonwebtoken");
+                  ...
+              - pattern-either:
+                  - pattern: |
+                      $JWT.sign($P, "...", ...);
+                  - pattern: |
+                      $JWT.verify($P, "...", ...);
+                  - patterns:
+                      - pattern-inside: |
+                          $SECRET = "...";
+                          ...
+                      - pattern-either:
+                          - pattern: $JWT.sign($P, $SECRET, ...)
+                          - pattern: $JWT.verify($P, $SECRET, ...)
+          - patterns:
+              - pattern-inside: |
+                  var $JOSE = require("jose");
+                  ...
+              - pattern-either:
+                  - pattern-inside: |
+                      var {JWT} = $JOSE;
+                      ...
+                  - pattern-inside: |
+                      var {JWK, JWT} = $JOSE;
+                      ...
+              - pattern-either:
+                  - pattern: |
+                      JWT.verify($P, "...", ...);
+                  - pattern: |
+                      JWT.sign($P, "...", ...);
+                  - pattern: |
+                      JWT.verify($P, JWK.asKey("..."), ...);     
+                  - pattern: |
+                      $JWT.sign($P, JWK.asKey("..."), ...);
     message: Hardcoded JWT secret was found. Store it properly in 
       an environment variable.
     languages:

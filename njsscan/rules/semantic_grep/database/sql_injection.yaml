@@ -1,5 +1,7 @@
 rules:
   - id: node_sqli_injection
+    options:
+      symbolic_propagation: true
     patterns:
       - pattern-either:
           - pattern-inside: |
@@ -22,26 +24,6 @@ rules:
               $CON.query(<... $REQ.$QUERY.$VAR ...>, ...)
           - pattern: |
               $CON.query(<... $REQ.$QUERY ...>, ...)
-          - pattern: |
-              $SQL = <... $REQ.$QUERY.$VAR ...>;
-              ...
-              $CON.query(<... $SQL ...>, ...)
-          - pattern: |
-              $SQL = <... $REQ.$QUERY ...>;
-              ...
-              $CON.query(<... $SQL ...>, ...)
-          - pattern: |
-              $INP = <... $REQ.$QUERY.$VAR ...>;
-              ...
-              $SQL = <... $INP ...>;
-              ...
-              $CON.query(<... $SQL ...>, ...)
-          - pattern: |
-              $INP = <... $REQ.$QUERY ...>;
-              ...
-              $SQL = <... $INP ...>;
-              ...
-              $CON.query(<... $SQL ...>, ...)
     message: >-
       Untrusted input concatinated with raw SQL query can result in SQL
       Injection.

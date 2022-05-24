@@ -1,5 +1,7 @@
 rules:
   - id: express_open_redirect
+    options:
+      symbolic_propagation: true
     patterns:
       - pattern-either:
         - pattern-inside: function ($REQ, $RES, ...) {...}
@@ -12,14 +14,6 @@ rules:
               $X.redirect(..., <... $REQ.$QUERY ...>, ...)
           - pattern: |
               $X.redirect(..., <... $REQ.$QUERY.$FOO ...>, ...)
-          - pattern: |
-              $INP = <... $REQ.$QUERY ...>;
-              ...
-              $X.redirect(..., <... $INP ...>, ...)
-          - pattern: |
-              $INP = <... $REQ.$QUERY.$FOO ...>;
-              ...
-              $X.redirect(..., <... $INP ...>, ...)
     message: >-
       Untrusted user input in redirect() can result in Open Redirect
       vulnerability.
@@ -30,6 +24,8 @@ rules:
       owasp-web: a1
       cwe: cwe-601
   - id: express_open_redirect2
+    options:
+      symbolic_propagation: true
     patterns:
       - pattern-inside: |
           $APP.$METHOD(..., function $FUNC($REQ, $RES) { ... })
@@ -46,30 +42,6 @@ rules:
             $RES.writeHead(..., {"=~/location/i": <... $REQ.$VAR ...> }, ...)
         - pattern: |
             $RES.writeHead(..., {"=~/location/i": <... $REQ.$VAR.$VARR ...> }, ...)
-        - pattern: |
-            $INP = <... $REQ.$VAR ...>;
-            ...
-            $RES.header(..., "=~/location/i", <... $INP ...>, ...)
-        - pattern: |
-            $INP = <... $REQ.$VAR.$VARR ...>;
-            ...
-            $RES.header(..., "=~/location/i", <... $INP ...>, ...)
-        - pattern: |
-            $INP = <... $REQ.$VAR ...>;
-            ...
-            $RES.writeHead(..., "=~/location/i", <... $INP ...>, ...)
-        - pattern: |
-            $INP = <... $REQ.$VAR.$VARR ...>;
-            ...
-            $RES.writeHead(..., "=~/location/i", <... $INP ...>, ...)
-        - pattern: |
-            $INP = <... $REQ.$VAR ...>;
-            ...
-            $RES.writeHead(..., {"=~/location/i": <... $INP ...> }, ...)
-        - pattern: |
-            $INP = <... $REQ.$VAR.$VARR ...>;
-            ...
-            $RES.writeHead(..., {"=~/location/i": <... $INP ...> }, ...)
     message: >-
       Untrusted user input in response header('Location') can result in Open
       Redirect vulnerability.

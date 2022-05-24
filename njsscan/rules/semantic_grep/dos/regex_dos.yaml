@@ -1,61 +1,54 @@
-rules:
+  rules:
   - id: regex_dos
-    patterns:
-      - pattern-either:
-        - pattern-inside: function ($REQ, $RES, ...) {...}
-        - pattern-inside: function $FUNC($REQ, $RES, ...) {...}
-        - pattern-inside: $X = function $FUNC($REQ, $RES, ...) {...}
-        - pattern-inside: var $X = function $FUNC($REQ, $RES, ...) {...};
-        - pattern-inside: $APP.$METHOD(..., function $FUNC($REQ, $RES, ...) {...})
-      - pattern-either:
-          - pattern: |
-              $REGEX.test(<... $REQ ...>)
-          - pattern: |
-              $REGEX.test(<... $REQ.$QUERY ...>)
-          - pattern: |
-              $REGEX.test(<... $REQ.$BODY.$PARAM ...>)
-          - pattern: |
-              $INP = <... $REQ ...>;
-              ...
-              $REGEX.test(<... $INP ...>)
-          - pattern: |
-              $INP = <... $REQ.$QUERY ...>;
-              ...
-              $REGEX.test(<... $INP ...>)
-          - pattern: |
-              $INP = <... $REQ.$BODY.$PARAM ...>;
-              ...
-              $REGEX.test(<... $INP ...>)
-          - pattern: |
-              /.../g.exec(<... $REQ ...>)
-          - pattern: |
-              /.../g.exec(<... $REQ.$QUERY ...>)
-          - pattern: |
-              /.../.exec(<... $REQ.$BODY.$PARAM ...>)
-          - pattern: |
-              $INP = <... $REQ ...>;
-              ...
-              /.../.exec(<... $INP ...>)
-          - pattern: |
-              $INP = <... $REQ.$QUERY ...>;
-              ...
-              /.../.exec(<... $INP ...>)
-          - pattern: |
-              $INP = <... $REQ.$BODY.$PARAM ...>;
-              ...
-              /.../.exec(<... $INP ...>)
-          - pattern: |
-              $RE = /.../;
-              ...
-              $RE.exec(<... $REQ ...>)
-          - pattern: |
-              $RE = /.../;
-              ...
-              $RE.exec(<... $REQ.$QUERY ...>)
-          - pattern: |
-              $RE = /.../;
-              ...
-              $RE.exec(<... $REQ.$BODY.$PARAM ...>)
+    options:
+    symbolic_propagation: true
+    mode: taint
+    pattern-sources:
+        - patterns:
+            - pattern-either:
+                - pattern-inside: function ... ($REQ, $RES) {...}
+                - pattern-inside: function ... ($REQ, $RES, $NEXT) {...}
+                - patterns:
+                    - pattern-either:
+                        - pattern-inside: $APP.$METHOD(..., function $FUNC($REQ, $RES) {...})
+                        - pattern-inside: $APP.$METHOD(..., function $FUNC($REQ, $RES, $NEXT) {...})
+                    - metavariable-regex:
+                        metavariable: $METHOD
+                        regex: ^(get|post|put|head|delete|options)$
+            - pattern-either:
+                - pattern: $REQ.query
+                - pattern: $REQ.body
+                - pattern: $REQ.params
+                - pattern: $REQ.cookies
+                - pattern: $REQ.headers
+        - patterns:
+            - pattern-either:
+                - pattern-inside: >
+                    ({ $REQ }: Request, $RES: Response, $NEXT: NextFunction) =>
+                    {...}
+                - pattern-inside: |
+                    ({ $REQ }: Request, $RES: Response) => {...}
+            - pattern-either:
+                - pattern: query
+                - pattern: body
+                - pattern: params
+                - pattern: cookies
+                - pattern: headers
+    pattern-sinks:
+        - patterns:
+            - pattern-either:
+            - pattern: |
+                $REGEX.test(...)
+            - pattern: |
+                $REGEX.exec(...)
+            - pattern: |
+                /.../g.test(...)
+            - pattern: |
+                /.../g.exec(...)
+            - pattern: |
+                /.../.test(...)
+            - pattern: |
+                /.../.exec(...)
     message: >-
       Ensure that the regex used to compare with user supplied input is safe
       from regular expression denial of service.
